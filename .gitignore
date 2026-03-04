@@ -1,0 +1,54 @@
+# -----------------------------
+# Secrets & Credentials
+# -----------------------------
+.env
+*.pem
+*secret*
+
+# -----------------------------
+# Data & Database Volumes
+# -----------------------------
+# Ignore raw Kaggle datasets and Parquet files
+*.csv
+*.parquet
+*.json
+
+# Ignore local Docker volume mounts (prevents pushing the actual databases to GitHub)
+postgres_oltp_data/
+postgres_dw_data/
+minio_data/
+data/
+
+# -----------------------------
+# dbt (Data Build Tool)
+# -----------------------------
+dbt_ecommerce/target/
+dbt_ecommerce/dbt_packages/
+dbt_ecommerce/logs/
+profiles.yml
+
+# -----------------------------
+# Apache Airflow
+# -----------------------------
+logs/
+airflow-webserver.pid
+airflow.db
+airflow.cfg
+webserver_config.py
+
+# -----------------------------
+# Python Environment
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# -----------------------------
+# OS & IDE
+# -----------------------------
+.DS_Store
+.vscode/
+.idea/

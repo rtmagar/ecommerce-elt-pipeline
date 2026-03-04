@@ -1,0 +1,31 @@
+
+  
+    
+
+  create  table "analytics_warehouse"."public"."fact_payments__dbt_tmp"
+  
+  
+    as
+  
+  (
+    
+
+WITH orders AS (
+    SELECT * FROM "analytics_warehouse"."public"."stg_orders"
+),
+payments AS (
+    SELECT * FROM "analytics_warehouse"."public"."stg_order_payments"
+)
+
+SELECT
+    p.order_id,
+    o.customer_id,
+    p.payment_sequential,
+    p.payment_type,
+    p.payment_installments,
+    p.payment_value,
+    o.purchase_ts
+FROM payments p
+JOIN orders o ON p.order_id = o.order_id
+  );
+  

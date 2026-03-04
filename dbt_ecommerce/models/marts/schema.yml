@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Dimension table for customer details"
+    columns:
+      - name: customer_id
+        description: "Primary key for customers"
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_sellers
+    columns:
+      - name: seller_id
+        tests:
+          - unique
+          - not_null
+
+  - name: fact_sales
+    description: "Core fact table tracking individual items sold"
+    columns:
+      - name: order_id
+        description: "The ID of the order"
+        tests:
+          - not_null
+      
+      - name: customer_id
+        description: "Foreign key linking to dim_customers"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+              
+      - name: seller_id
+        description: "Foreign key linking to dim_sellers"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_sellers')
+              field: seller_id
+              
+      - name: price
+        description: "The item price"
+        tests:
+          - not_null
