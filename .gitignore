@@ -1,55 +1,48 @@
-# -----------------------------
-# Secrets & Credentials
-# -----------------------------
-.env
-*.pem
-*secret*
-
-# -----------------------------
-# Data & Database Volumes
-# -----------------------------
-# Ignore raw Kaggle datasets and Parquet files
+# ==========================================
+# 1. Data & Local Databases
+# ==========================================
+# Ignores all the massive Kaggle CSV files
 raw_data/
-*.csv
-*.parquet
-*.json
 
-# Ignore local Docker volume mounts (prevents pushing the actual databases to GitHub)
+# Ignores the local object storage (Data Lake)
+minio_data/
+
+# Ignores local Postgres volumes (if they generate during docker-compose up)
 postgres_oltp_data/
 postgres_dw_data/
-minio_data/
-data/
 
-# -----------------------------
-# dbt (Data Build Tool)
-# -----------------------------
-dbt_ecommerce/target/
-dbt_ecommerce/dbt_packages/
-dbt_ecommerce/logs/
-profiles.yml
+# ==========================================
+# 2. Python & Virtual Environment
+# ==========================================
+# Ignores the entire virtual environment folder
+venv/
 
-# -----------------------------
-# Apache Airflow
-# -----------------------------
-logs/
-airflow-webserver.pid
-airflow.db
-airflow.cfg
-webserver_config.py
-
-# -----------------------------
-# Python Environment
-# -----------------------------
+# Ignores compiled Python cache files (like inside your dags/ folder)
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
-.venv/
-env/
 
-# -----------------------------
-# OS & IDE
-# -----------------------------
+# ==========================================
+# 3. dbt (Data Build Tool) Artifacts
+# ==========================================
+# Ignores auto-generated compiled SQL, downloaded packages, and dbt logs
+dbt_ecommerce/target/
+dbt_ecommerce/dbt_packages/
+dbt_ecommerce/logs/
+
+# Standard safety practice to prevent pushing credential files
+profiles.yml 
+
+# ==========================================
+# 4. Pipeline Logs
+# ==========================================
+# Ignores the root logs folder (where your dbt.log currently sits)
+logs/
+
+# ==========================================
+# 5. Environment Variables & OS Files
+# ==========================================
+.env
 .DS_Store
 .vscode/
 .idea/
