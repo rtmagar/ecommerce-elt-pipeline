@@ -29,7 +29,34 @@ It contains roughly 100,000 orders made across multiple marketplaces in Brazil f
 
 ## Architecture & Tech Stack
 
-![Pipeline Architecture](assets/architecture_diagram.png)
+### Pipeline Architecture
+```mermaid
+graph TD
+    subgraph Orchestration
+        A[Apache Airflow]
+    end
+
+    subgraph Extraction
+        B[(Postgres OLTP)] -->|Python / Pandas| C
+    end
+
+    subgraph Data Lake
+        C[MinIO Object Storage]
+    end
+
+    subgraph Data Warehouse
+        C -->|Python Load| D[(Postgres DW: Raw)]
+        D -->|dbt Transform| E[(Postgres DW: Star Schema)]
+    end
+
+    subgraph Business Intelligence
+        E -->|SQL Queries| F[Metabase Dashboard]
+    end
+
+    A -.->|Schedules & Triggers| B
+    A -.->|Schedules & Triggers| C
+    A -.->|Schedules & Triggers| D
+```
 
 | Component               | Technology                  |
 | ----------------------- | --------------------------- |
