@@ -1,6 +1,7 @@
 # E-Commerce ELT Pipeline
 
-![Executive Dashboard](assets/db.png)
+
+<img src="assets/db.png" width="800" height="700" alt="Pipeline Architecture">
 
 This project simulates a high-volume e-commerce business environment where transactional data is generated continuously. Instead of running slow, complex analytical queries directly against the production database, this solution implements an automated ELT (Extract, Load, Transform) pipeline. It extracts raw operational data, stages it securely in a Data Lake, and uses dbt to model a highly efficient Star Schema in a PostgreSQL Data Warehouse.
 
@@ -30,33 +31,7 @@ It contains roughly 100,000 orders made across multiple marketplaces in Brazil f
 ## Architecture & Tech Stack
 
 ### Pipeline Architecture
-```mermaid
-graph TD
-    subgraph Orchestration
-        A[Apache Airflow]
-    end
-
-    subgraph Extraction
-        B[(Postgres OLTP)] -->|Python / Pandas| C
-    end
-
-    subgraph Data Lake
-        C[MinIO Object Storage]
-    end
-
-    subgraph Data Warehouse
-        C -->|Python Load| D[(Postgres DW: Raw)]
-        D -->|dbt Transform| E[(Postgres DW: Star Schema)]
-    end
-
-    subgraph Business Intelligence
-        E -->|SQL Queries| F[Metabase Dashboard]
-    end
-
-    A -.->|Schedules & Triggers| B
-    A -.->|Schedules & Triggers| C
-    A -.->|Schedules & Triggers| D
-```
+<img src="assets/pipeline_architecture.png" width="550" height="690" alt="Pipeline Architecture">
 
 | Component               | Technology                  |
 | ----------------------- | --------------------------- |
