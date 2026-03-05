@@ -31,24 +31,31 @@ It contains roughly 100,000 orders made across multiple marketplaces in Brazil f
 
 ### Pipeline Architecture
 ```mermaid
-graph LR
+graph TD
     subgraph Orchestration
-        A([Apache Airflow])
+        A[Apache Airflow]
     end
 
-    subgraph ELT Pipeline
-        B[(Postgres OLTP)] -->|Python Extract| C[MinIO Data Lake]
+    subgraph Extraction
+        B[(Postgres OLTP)] -->|Python / Pandas| C
+    end
+
+    subgraph Data Lake
+        C[MinIO Object Storage]
+    end
+
+    subgraph Data Warehouse
         C -->|Python Load| D[(Postgres DW: Raw)]
         D -->|dbt Transform| E[(Postgres DW: Star Schema)]
     end
 
-    subgraph BI
-        E -->|Serve| F[Metabase]
+    subgraph Business Intelligence
+        E -->|SQL Queries| F[Metabase Dashboard]
     end
 
-    A -.->|Triggers| B
-    A -.->|Triggers| C
-    A -.->|Triggers| D
+    A -.->|Schedules & Triggers| B
+    A -.->|Schedules & Triggers| C
+    A -.->|Schedules & Triggers| D
 ```
 
 | Component               | Technology                  |
