@@ -31,7 +31,61 @@ It contains roughly 100,000 orders made across multiple marketplaces in Brazil f
 ## Architecture & Tech Stack
 
 ### Pipeline Architecture
-<img src="assets/pipeline_architecture.png" width="550" height="690" alt="Pipeline Architecture">
+<!-- <img src="assets/pipeline_architecture.png" width="550" height="690" alt="Pipeline Architecture"> -->
+``` mermaid
+flowchart LR
+
+%% ---------------- SOURCES ----------------
+subgraph Sources
+    A[(Postgres OLTP)]
+end
+
+%% ---------------- ORCHESTRATION ----------------
+subgraph Orchestration
+    B[Apache Airflow]
+end
+
+%% ---------------- INGESTION ----------------
+subgraph Ingestion
+    C[Python / Pandas Extraction]
+end
+
+%% ---------------- DATA LAKE ----------------
+subgraph Data Lake
+    D[(MinIO Object Storage)]
+end
+
+%% ---------------- DATA WAREHOUSE ----------------
+subgraph Data Warehouse
+    E[(Postgres DW - Raw Layer)]
+    F[(Postgres DW - Star Schema)]
+end
+
+%% ---------------- TRANSFORMATION ----------------
+subgraph Transformation
+    G[dbt Models]
+end
+
+%% ---------------- BI ----------------
+subgraph Business Intelligence
+    H[Metabase Dashboards]
+end
+
+
+%% ----------- DATA FLOW -----------
+A --> C
+C --> D
+D --> E
+E --> G
+G --> F
+F --> H
+
+
+%% ----------- ORCHESTRATION -----------
+B -. Schedules .-> C
+B -. Schedules .-> E
+B -. Triggers .-> G
+```
 
 | Component               | Technology                  |
 | ----------------------- | --------------------------- |
@@ -70,3 +124,66 @@ ECOMMERCE_ELT_PROJECT/
 ├── init_oltp_db.py             # Simulates production DB seeding
 ├── assets/                     # Architecture diagrams and dashboard screenshots
 └── requirements.txt
+```
+
+## How to Run Locally
+**1. Clone the repository:**
+```bash
+git clone https://github.com/rtmagar/ecommerce-elt-pipeline.git
+cd ecommerce_elt_project
+```
+**2. Download the Raw Data:**
+
+Download the Olist E-Commerce Dataset from Kaggle.
+
+Create a folder named raw_data in the root directory.
+
+Extract the downloaded CSVs into the raw_data folder.
+
+**3. Start the infrastructure (Docker):**
+Ensure Docker Desktop is running, then spin up the stack:
+```bash
+docker compose up -d
+```
+**4. Initialize the source (production) database:**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+pip install -r requirements.txt
+python init_oltp_db.py
+```
+**5. Trigger the Airflow DAG:**
+Navigate to ```http://localhost:8080``` (credentials: ```airflow``` / ```airflow```). Enable and trigger the ```ecommerce_elt_minio_postgres``` DAG.
+
+**6. Configure dbt and Run Transformations:**
+Before running dbt, you must configure your local profile.
+
+Create a ```profiles.yml``` file in your ```~/.dbt/``` directory (or inside the ```dbt_ecommerce``` folder).
+
+Add the following connection details:
+```bash
+ecommerce_elt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: dw_admin
+      password: dw_password
+      port: 5434
+      dbname: analytics_warehouse
+      schema: public
+      threads: 4
+```
+
+**7. Run the dbt models:**
+Ensure Docker Desktop is running, then spin up the stack:
+```bash
+cd dbt_ecommerce
+dbt deps
+dbt run --full-refresh  # Initial build to establish schema
+dbt test                # Run data quality assertions
+```
+
+**8. View the Analytics Dashboard:**
+Navigate to ```http://localhost:3000``` to access Metabase. Add a new PostgreSQL database connection using host ```postgres-dw``` and port ```5432``` to explore the Star Schema.
