@@ -7,8 +7,6 @@ WITH orders AS (
     -- This now correctly pulls ANY order that was modified recently, 
     -- regardless of when it was originally purchased!
     
-        WHERE updated_at > (SELECT MAX(updated_at) FROM "analytics_warehouse"."public"."fact_sales")
-    
 ),
 items AS (
     SELECT * FROM "analytics_warehouse"."public"."stg_order_items"

@@ -56,7 +56,10 @@ services:
       - ./dags:/opt/airflow/dags
       - ./requirements.txt:/requirements.txt
     command: >
-      bash -c "pip install -r /requirements.txt && airflow standalone"
+      bash -c "pip install -r /requirements.txt && 
+      airflow db migrate && 
+      airflow users create --username airflow --password airflow --firstname Air --lastname Flow --role Admin --email admin@example.com || true && 
+      airflow standalone"
   
   # 5. Metabase Setup
   metabase:
