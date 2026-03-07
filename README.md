@@ -134,11 +134,7 @@ cd ecommerce_elt_project
 ```
 **2. Download the Raw Data:**
 
-Download the Olist E-Commerce Dataset from Kaggle.
-
-Create a folder named raw_data in the root directory.
-
-Extract the downloaded CSVs into the raw_data folder.
+Download the Olist E-Commerce Dataset from Kaggle. Create a folder named ```raw_data``` in the root directory. Extract the downloaded CSVs into the ```raw_data``` folder.
 
 **3. Update the Airflow Configuration:**
 Before starting the containers, update the Airflow startup command to ensure the default admin credentials (`airflow` / `airflow`) are created automatically. 
