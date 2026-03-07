@@ -192,5 +192,15 @@ dbt run --full-refresh  # Initial build to establish schema
 dbt test                # Run data quality assertions
 ```
 
-**8. View the Analytics Dashboard:**
-Navigate to ```http://localhost:3000``` to access Metabase. Add a new PostgreSQL database connection using host ```postgres-dw``` and port ```5432``` to explore the Star Schema.
+**8. Explore the Data (Optional):**
+To explore the finalized Star Schema and build your own visualizations:
+1. Navigate to `http://localhost:3000` to access the Metabase UI.
+2. Set up an admin account.
+3. Add a new PostgreSQL database connection using:
+   - **Host:** `postgres-dw`
+   - **Port:** `5432`
+   - **Database Name:** `analytics_warehouse`
+   - **Username:** `dw_admin`
+   - **Password:** `dw_password`
+
+*(Note: The pre-built dashboard is saved locally. You can view the final visualization screenshots at the top of this README).*
