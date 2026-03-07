@@ -1,7 +1,7 @@
 # E-Commerce ELT Pipeline
 
 
-<img src="assets/db.png" width="800" height="700" alt="Pipeline Architecture">
+<img src="assets/dashboard_preview.png" width="800" height="700" alt="Dashboard Preview">
 
 This project simulates a high-volume e-commerce business environment where transactional data is generated continuously. Instead of running slow, complex analytical queries directly against the production database, this solution implements an automated ELT (Extract, Load, Transform) pipeline. It extracts raw operational data, stages it securely in a Data Lake, and uses dbt to model a highly efficient Star Schema in a PostgreSQL Data Warehouse.
 
