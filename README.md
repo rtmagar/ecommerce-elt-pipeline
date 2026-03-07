@@ -135,19 +135,8 @@ cd ecommerce_elt_project
 **2. Download the Raw Data:**
 
 Download the Olist E-Commerce Dataset from Kaggle. Create a folder named ```raw_data``` in the root directory. Extract the downloaded CSVs into the ```raw_data``` folder.
-
-**3. Update the Airflow Configuration:**
-Before starting the containers, update the Airflow startup command to ensure the default admin credentials (`airflow` / `airflow`) are created automatically. 
-Open the `docker-compose.yml` file, locate the `airflow:` service at the bottom, and replace the existing `command:` line with this:
-```yaml
-    command: >
-      bash -c "pip install -r /requirements.txt && 
-      airflow db migrate && 
-      airflow users create --username airflow --password airflow --firstname Air --lastname Flow --role Admin --email admin@example.com || true && 
-      airflow standalone"
-```
       
-**4. Start the infrastructure (Docker):**
+**3. Start the infrastructure (Docker):**
 Ensure Docker Desktop is running, then spin up the stack:
 ```bash
 docker compose up -d
