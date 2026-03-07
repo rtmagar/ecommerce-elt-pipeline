@@ -151,7 +151,13 @@ python init_oltp_db.py
 **5. Trigger the Airflow DAG:**
 Navigate to ```http://localhost:8080``` (credentials: ```airflow``` / ```airflow```). Enable and trigger the ```ecommerce_elt_minio_postgres``` DAG.
 
-**6. Configure dbt and Run Transformations:**
+**6. Verify Data in the Data Lake(MinIO):**
+To see the raw data successfully extracted by Airflow before it enters the Data Warehouse:
+1. Navigate to `http://localhost:9001` to access the MinIO Object Storage UI.
+2. Log in using the credentials defined in the `docker-compose.yml` (Default: `minioadmin` / `minioadmin`).
+3. Open the storage bucket to view the raw extracted files securely staged and ready for the Data Warehouse.
+
+**7. Configure dbt and Run Transformations:**
 Before running dbt, you must configure your local profile.
 
 Create a ```profiles.yml``` file in your ```~/.dbt/``` directory (or inside the ```dbt_ecommerce``` folder).
@@ -172,15 +178,14 @@ ecommerce_elt:
       threads: 4
 ```
 
-**7. Run the dbt models:**
+**8. Run the dbt models:**
 Ensure Docker Desktop is running, then spin up the stack:
 ```bash
 cd dbt_ecommerce
-dbt run --full-refresh  # Initial build to establish schema
-dbt test                # Run data quality assertions
+dbt run 
 ```
 
-**8. Explore the Data (Optional):**
+**9. Explore the Data (Optional):**
 To explore the finalized Star Schema and build your own visualizations:
 1. Navigate to `http://localhost:3000` to access the Metabase UI.
 2. Set up an admin account.
