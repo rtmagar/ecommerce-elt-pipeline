@@ -187,7 +187,6 @@ ecommerce_elt:
 Ensure Docker Desktop is running, then spin up the stack:
 ```bash
 cd dbt_ecommerce
-dbt deps
 dbt run --full-refresh  # Initial build to establish schema
 dbt test                # Run data quality assertions
 ```
