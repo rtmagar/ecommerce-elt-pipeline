@@ -152,8 +152,13 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
 python init_oltp_db.py
 ```
+
 **5. Trigger the Airflow DAG:**
-Navigate to ```http://localhost:8080``` (credentials: ```airflow``` / ```airflow```). Enable and trigger the ```ecommerce_elt_minio_postgres``` DAG.
+Because this project uses `airflow standalone` for a streamlined container deployment, the admin password is auto-generated securely at startup. 
+1. Run `docker logs ecommerce_elt_project-airflow-1` in your terminal.
+2. Look for the auto-generated password in the logs.
+3. Navigate to `http://localhost:8080` and log in with username: `admin` and the generated password.
+4. Enable and trigger the `ecommerce_elt_minio_postgres` DAG.
 
 **6. Configure dbt and Run Transformations:**
 Before running dbt, you must configure your local profile.

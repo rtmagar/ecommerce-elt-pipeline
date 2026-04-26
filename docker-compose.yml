@@ -42,6 +42,7 @@ services:
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
 
+  # 5. Apache Airflow (Standalone for easy local dev)
   airflow:
     image: apache/airflow:2.7.1-python3.10
     environment:
