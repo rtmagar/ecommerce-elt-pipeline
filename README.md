@@ -162,11 +162,7 @@ pip install dbt-postgres==1.10.0 SQLAlchemy
 python init_oltp_db.py
 ```
 **5. Trigger the Airflow DAG:**
-Because this project uses `airflow standalone` for a streamlined container deployment, the admin password is auto-generated securely at startup. 
-1. Run `docker logs ecommerce_elt_project-airflow-1` in your terminal.
-2. Look for the auto-generated password in the logs.
-3. Navigate to `http://localhost:8080` and log in with username: `admin` and the generated password.
-4. Enable and trigger the `ecommerce_elt_minio_postgres` DAG.
+Navigate to ```http://localhost:8080``` (credentials: ```airflow``` / ```airflow```). Enable and trigger the ```ecommerce_elt_minio_postgres``` DAG.
 
 **6. Verify the Data Lake (MinIO):**
 Once the Airflow DAG runs successfully, you can verify that the raw data was successfully extracted and staged in the Data Lake.
