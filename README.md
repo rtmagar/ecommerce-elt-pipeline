@@ -145,14 +145,22 @@ Ensure Docker Desktop is running, then spin up the stack:
 ```bash
 docker compose up -d
 ```
-**4. Initialize the source (production) database:**
+**4. Initialize the Local Environment & Source Database:**
+To avoid dependency conflicts between Airflow's core providers and our local dbt engine, we install the core data-movement libraries first, followed by the local tools (`dbt-postgres` and `SQLAlchemy`).
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
+# 1. Install the clean, core data libraries
 pip install -r requirements.txt
+
+# 2. Install dbt and the SQLAlchemy engine required by Pandas
+pip install dbt-postgres==1.10.0 SQLAlchemy
+
+# 3. Seed the source PostgreSQL database with Kaggle data
 python init_oltp_db.py
 ```
-
 **5. Trigger the Airflow DAG:**
 Because this project uses `airflow standalone` for a streamlined container deployment, the admin password is auto-generated securely at startup. 
 1. Run `docker logs ecommerce_elt_project-airflow-1` in your terminal.
@@ -160,14 +168,22 @@ Because this project uses `airflow standalone` for a streamlined container deplo
 3. Navigate to `http://localhost:8080` and log in with username: `admin` and the generated password.
 4. Enable and trigger the `ecommerce_elt_minio_postgres` DAG.
 
-**6. Configure dbt and Run Transformations:**
+**6. Verify the Data Lake (MinIO):**
+Once the Airflow DAG runs successfully, you can verify that the raw data was successfully extracted and staged in the Data Lake.
+1. Navigate to `http://localhost:9001` to access the MinIO Console.
+2. Log in using the default credentials:
+   - **Username:** `minioadmin`
+   - **Password:** `minioadmin`
+3. Click on the **Object Browser** to view the staging buckets and the newly landed raw data files.
+
+**7. Configure dbt and Run Transformations:**
 Before running dbt, you must configure your local profile.
 
 Create a ```profiles.yml``` file in your ```~/.dbt/``` directory (or inside the ```dbt_ecommerce``` folder).
 
 Add the following connection details:
 ```bash
-ecommerce_elt:
+dbt_ecommerce:
   target: dev
   outputs:
     dev:
@@ -181,7 +197,7 @@ ecommerce_elt:
       threads: 4
 ```
 
-**7. Run the dbt models:**
+**8. Run the dbt models:**
 Ensure Docker Desktop is running, then spin up the stack:
 ```bash
 cd dbt_ecommerce
@@ -190,5 +206,15 @@ dbt run --full-refresh  # Initial build to establish schema
 dbt test                # Run data quality assertions
 ```
 
-**8. View the Analytics Dashboard:**
-Navigate to ```http://localhost:3000``` to access Metabase. Add a new PostgreSQL database connection using host ```postgres-dw``` and port ```5432``` to explore the Star Schema.
+**9. Explore the Data (Optional):**
+To explore the finalized Star Schema and build your own visualizations:
+1. Navigate to `http://localhost:3000` to access the Metabase UI.
+2. Set up an admin account.
+3. Add a new PostgreSQL database connection using:
+   - **Host:** `postgres-dw`
+   - **Port:** `5432`
+   - **Database Name:** `analytics_warehouse`
+   - **Username:** `dw_admin`
+   - **Password:** `dw_password`
+
+*(Note: The pre-built dashboard is saved locally. You can view the final visualization screenshots at the top of this README).*

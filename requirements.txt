@@ -3,6 +3,3 @@ numpy<2.0.0
 psycopg2-binary==2.9.7
 boto3==1.28.44
 minio==7.1.16
-apache-airflow-providers-postgres==5.7.1
-apache-airflow-providers-amazon==8.6.0
-dbt-postgres==1.10.0
