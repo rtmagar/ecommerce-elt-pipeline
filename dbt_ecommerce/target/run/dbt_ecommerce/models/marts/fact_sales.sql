@@ -1,24 +1,42 @@
 
       
-        
-            delete from "analytics_warehouse"."public"."fact_sales"
-            using "fact_sales__dbt_tmp160037072847"
-            where (
-                
-                    "fact_sales__dbt_tmp160037072847".order_id = "analytics_warehouse"."public"."fact_sales".order_id
-                    and 
-                
-                    "fact_sales__dbt_tmp160037072847".order_item_id = "analytics_warehouse"."public"."fact_sales".order_item_id
-                    
-                
-                
-            );
-        
+  
     
 
-    insert into "analytics_warehouse"."public"."fact_sales" ("order_id", "order_item_id", "customer_id", "product_id", "seller_id", "purchase_ts", "delivered_ts", "updated_at", "price", "freight_value", "total_item_value")
-    (
-        select "order_id", "order_item_id", "customer_id", "product_id", "seller_id", "purchase_ts", "delivered_ts", "updated_at", "price", "freight_value", "total_item_value"
-        from "fact_sales__dbt_tmp160037072847"
-    )
+  create  table "analytics_warehouse"."public"."fact_sales"
+  
+  
+    as
+  
+  (
+    
+
+WITH orders AS (
+    SELECT * FROM "analytics_warehouse"."public"."stg_orders"
+
+    -- THE TRUE INCREMENTAL LOGIC
+    -- This now correctly pulls ANY order that was modified recently, 
+    -- regardless of when it was originally purchased!
+    
+),
+items AS (
+    SELECT * FROM "analytics_warehouse"."public"."stg_order_items"
+)
+
+SELECT
+    i.order_id,
+    i.order_item_id,
+    o.customer_id,
+    i.product_id,
+    i.seller_id,
+    o.purchase_ts,
+    o.delivered_ts,
+    o.updated_at, -- Tracking the high-water mark
+    i.price,
+    i.freight_value,
+    i.total_item_value
+FROM items i
+JOIN orders o ON i.order_id = o.order_id
+  );
+  
   
