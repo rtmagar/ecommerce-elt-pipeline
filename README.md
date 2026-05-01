@@ -3,7 +3,7 @@
 
 <img src="assets/db.png" width="800" height="700" alt="Pipeline Architecture">
 
-This project simulates a high-volume e-commerce business environment where transactional data is generated continuously. Instead of running slow, complex analytical queries directly against the production database, this solution implements an automated ELT (Extract, Load, Transform) pipeline. It extracts raw operational data, stages it securely in a Data Lake, and uses dbt to model a highly efficient Star Schema in a PostgreSQL Data Warehouse.
+This project simulates a high-volume e-commerce business environment where transactional data is generated continuously. Instead of running slow, complex analytical queries directly against the production database, this solution implements an automated ELT (Extract, Load, Transform) pipeline. It extracts raw operational data, strictly validates it against Data Contracts, stages it securely in a Data Lake, and uses dbt to model a highly efficient Star Schema in a PostgreSQL Data Warehouse.
 
 The pipeline is fully containerized and orchestrated via Apache Airflow to handle daily incremental loads without manual intervention.
 
@@ -14,9 +14,11 @@ An e-commerce company processes thousands of orders daily, resulting in heavily 
 - Complex `JOIN` operations across massive tables resulted in slow dashboard load times.
 - There was no historical tracking or way to handle late-arriving delivery updates efficiently.
 - Rebuilding analytical tables from scratch every day was wasting compute resources.
+- Upstream schema changes (e.g., software engineers modifying production tables) frequently broke downstream dashboards silently.
 
 The company needed a robust, automated Modern Data Stack to:
 - Safely extract data without impacting production.
+- Enforce strict Data Contracts to prevent silent schema drift.
 - Model the data into a business-ready Star Schema tracking Sales, Payments, and Reviews.
 - Intelligently process only *new* or *updated* records (Incremental processing).
 - Serve a fast, highly available dashboard for executive metrics.
@@ -48,6 +50,7 @@ end
 %% ---------------- INGESTION ----------------
 subgraph Ingestion
     C[Python / Pandas Extraction]
+    V{Data Contract}
 end
 
 %% ---------------- DATA LAKE ----------------
@@ -74,7 +77,9 @@ end
 
 %% ----------- DATA FLOW -----------
 A --> C
-C --> D
+C --> V
+V -- Pass --> D
+V -. Fail .-> Halt((Halt Pipeline))
 D --> E
 E --> G
 G --> F
@@ -87,34 +92,40 @@ B -. Schedules .-> E
 B -. Triggers .-> G
 ```
 
-| Component               | Technology                  |
-| ----------------------- | --------------------------- |
-| Orchestration           | Apache Airflow              |
-| Extraction              | Python                      |
-| Data Lake (Storage)     | MinIO (S3-Compatible)       |
-| Data Warehouse          | PostgreSQL                  |
-| Transformation & Testing| dbt (Data Build Tool)       |
-| Business Intelligence   | Metabase                    |
-| Infrastructure          | Docker & Docker Compose     |
+| Component                   | Technology                  |
+| -----------------------     | --------------------------- |
+| Orchestration               | Apache Airflow              |
+| Extraction                  | Python                      |
+| Data Quality (Ingestion)    | SON Schema (Data Contracts) |
+| Data Lake (Storage)         | MinIO (S3-Compatible)       |
+| Data Warehouse              | PostgreSQL                  |
+| Transformation & Testing    | dbt (Data Build Tool)       |
+| Business Intelligence       | Metabase                    |
+| Infrastructure              | Docker & Docker Compose     |
+
 
 ## Key Engineering Highlights
 
-### 1. Advanced dbt Incremental Modeling
+### 1. Shift-Left Data Quality (Data Contracts)
+To protect the data lake from upstream schema drift, the pipeline enforces strict JSON-based Data Contracts at the point of extraction. Using jsonschema, the Airflow extraction task validates column names, data types, and enum constraints before data is serialized to Parquet. If an upstream software engineer introduces a breaking change (e.g., dropping a critical column), the pipeline halts immediately, preventing silent corruption of downstream BI dashboards.
+
+### 2. Advanced dbt Incremental Modeling
 Instead of relying on computationally expensive full-table scans, the `fact_sales` model utilizes dbt's `incremental` materialization. 
 * Implemented a synthetic `updated_at` high-water mark.
 * The pipeline efficiently processes only new orders and late-arriving delivery updates using complex `MERGE` logic, saving compute resources and reducing pipeline execution time.
 
-### 2. Idempotent Data Lake Architecture
+### 3. Idempotent Data Lake Architecture
 Utilized **MinIO** as an intermediate staging layer. By writing data to object storage before loading it into the warehouse, the pipeline ensures fault tolerance and allows for historical backfilling without hammering the source transactional database.
 
-### 3. Fully Containerized Environment
+### 4. Fully Containerized Environment
 The entire stack (Airflow, MinIO, Postgres OLTP, Postgres DW, and Metabase) is defined in a single `docker-compose.yml` file, ensuring perfect environment parity and isolated container networking.
 
 ## Project Structure
-
 ```text
 ECOMMERCE_ELT_PROJECT/
 ├── dags/                       # Airflow DAGs for orchestrating the ELT workflow
+│   ├── contracts/              # JSON Data Contracts defining strict schemas
+│   │   └── orders.json
 │   └── elt_pipeline_minio.py
 ├── dbt_ecommerce/              # dbt project containing SQL models and schema tests
 │   ├── models/                 
@@ -125,12 +136,11 @@ ECOMMERCE_ELT_PROJECT/
 ├── assets/                     # Architecture diagrams and dashboard screenshots
 └── requirements.txt
 ```
-
 ## How to Run Locally
 **1. Clone the repository:**
 ```bash
 git clone https://github.com/rtmagar/ecommerce-elt-pipeline.git
-cd ecommerce_elt_project
+cd ecommerce-elt-pipeline
 ```
 **2. Download the Raw Data:**
 
@@ -162,7 +172,7 @@ pip install dbt-postgres==1.10.0 SQLAlchemy
 python init_oltp_db.py
 ```
 **5. Trigger the Airflow DAG:**
-Navigate to ```http://localhost:8080``` (credentials: ```airflow``` / ```airflow```). Enable and trigger the ```ecommerce_elt_minio_postgres``` DAG.
+Navigate to ```http://localhost:8080``` (credentials: ```airflow``` / ```airflow```). Enable and trigger the ```oltp_s3_olap_pipeline``` DAG. *Note: Watch the logs to see the Data Contract validation succeed before the upload to MinIO.*
 
 **6. Verify the Data Lake (MinIO):**
 Once the Airflow DAG runs successfully, you can verify that the raw data was successfully extracted and staged in the Data Lake.
