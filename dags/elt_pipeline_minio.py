@@ -1,3 +1,7 @@
+import os
+import json
+import jsonschema
+from jsonschema import validate
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -21,11 +25,40 @@ def get_s3_client():
         aws_secret_access_key=MINIO_SECRET_KEY
     )
 
+def validate_data_contract(df, table_name):
+    """Loads the JSON schema contract and validates the extracted dataframe."""
+    # Resolve the absolute path to the contracts directory
+    dag_dir = os.path.dirname(os.path.abspath(__file__))
+    contract_path = os.path.join(dag_dir, 'contracts', f'{table_name}.json')
+    
+    try:
+        with open(contract_path, 'r') as file:
+            contract_schema = json.load(file)
+            
+        # Convert DataFrame to a list of dictionaries for JSON validation
+        # Handling dates/timestamps by converting them to strings for JSON compliance
+        df_json_ready = df.astype(str)
+        records = df_json_ready.to_dict(orient='records')
+        
+        # Enforce the contract
+        validate(instance=records, schema=contract_schema)
+        print(f"✅ Data Contract validation passed for {table_name}.")
+        
+    except FileNotFoundError:
+        print(f"⚠️ No contract found for {table_name} at {contract_path}. Bypassing validation.")
+    except jsonschema.exceptions.ValidationError as e:
+        raise ValueError(f"❌ DATA CONTRACT VIOLATION in {table_name}: {e.message}")
+
 def extract_to_minio(table_name, execution_date):
-    """Extracts data from OLTP and uploads to MinIO as Parquet, partitioned by date."""
+    """Extracts data from OLTP, validates contract, and uploads to MinIO partitioned by date."""
     # 1. Extract from Postgres OLTP
     src_hook = PostgresHook(postgres_conn_id='OLTP_DB')
     df = src_hook.get_pandas_df(f"SELECT * FROM {table_name};")
+    
+    # ---------------------------------------------------------
+    # NEW: The Data Contract Interceptor
+    # ---------------------------------------------------------
+    validate_data_contract(df, table_name)
     
     # 2. Convert to Parquet in memory
     parquet_buffer = io.BytesIO()
@@ -40,7 +73,7 @@ def extract_to_minio(table_name, execution_date):
     except Exception:
         s3_client.create_bucket(Bucket=BUCKET_NAME)
         
-    # NEW: Dynamic S3 Key using the execution_date
+    # Dynamic S3 Key using the execution_date
     partitioned_key = f"{table_name}/dt={execution_date}/{table_name}.parquet"
     
     s3_client.put_object(
@@ -54,7 +87,7 @@ def load_from_minio_to_dw(table_name, execution_date):
     """Downloads partitioned Parquet from MinIO and loads into DW."""
     s3_client = get_s3_client()
     
-    # NEW: Read from the exact partition for this DAG run
+    # Read from the exact partition for this DAG run
     partitioned_key = f"{table_name}/dt={execution_date}/{table_name}.parquet"
     
     # 1. Download from MinIO
@@ -68,7 +101,6 @@ def load_from_minio_to_dw(table_name, execution_date):
     df = pd.read_parquet(io.BytesIO(parquet_data))
     
     # 3. Load into Data Warehouse (raw schema)
-    # We still use 'replace' here because each daily snapshot contains the full table
     dest_hook = PostgresHook(postgres_conn_id='DW_DB')
     engine = dest_hook.get_sqlalchemy_engine()
     
@@ -94,14 +126,12 @@ with DAG(
         extract_task = PythonOperator(
             task_id=f'extract_{table}_to_minio',
             python_callable=extract_to_minio,
-            # NEW: Pass the logical date of the DAG run into the function
             op_kwargs={'table_name': table, 'execution_date': '{{ ds }}'}
         )
         
         load_task = PythonOperator(
             task_id=f'load_{table}_to_dw',
             python_callable=load_from_minio_to_dw,
-            # NEW: Pass the logical date of the DAG run into the function
             op_kwargs={'table_name': table, 'execution_date': '{{ ds }}'}
         )
         

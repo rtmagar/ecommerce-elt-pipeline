@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orders Data Contract",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "order_id": { "type": "string" },
+      "customer_id": { "type": "string" },
+      "order_status": { 
+        "type": "string", 
+        "enum": ["delivered", "shipped", "canceled", "invoiced", "processing", "unavailable", "approved", "created"] 
+      },
+      "order_purchase_timestamp": { "type": "string" }
+    },
+    "required": ["order_id", "customer_id", "order_status", "order_purchase_timestamp"]
+  }
+}
